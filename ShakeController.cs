@@ -4,18 +4,21 @@ using UnityEngine;
 
 public class ShakeController : MonoBehaviour
 {
+	public static ShakeController Instance;
 	private Vector3 originalPosition;
-	private bool originalPositionDefined = false;
 
-    public async void Shake(float magnitude, float duration, int freezeMS = 0)
+	private void Awake() 
+	{
+		Instance = this;
+	}
+
+    public async void Shake(float magnitude = 0.1f, float duration = 0.1f, int freezeMS = 0)
     {
 		if(freezeMS > 0 && Time.timeScale > 0){
 			await justFreeze(freezeMS);
 		}
 		
 		if(magnitude > 0 && duration > 0){
-			if(originalPositionDefined)
-        		this.transform.position = originalPosition;
 			await justShake(magnitude, duration);
 		}
     }
@@ -37,7 +40,6 @@ public class ShakeController : MonoBehaviour
 	private async Task justShake(float magnitude, float duration) {
         float d = 0f;
 		originalPosition = this.transform.position;
-		originalPositionDefined = true;
 
         while (d < duration) {
             await Task.Yield();
