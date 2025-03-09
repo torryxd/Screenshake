@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.SocialPlatforms;
 
 public class ShakeController : MonoBehaviour
 {
@@ -13,6 +14,7 @@ public class ShakeController : MonoBehaviour
 
     private float _freezeTime;
     private float _originalTimeScale;
+    private float _shakeTime;
     private Vector3 _originalPosition;
 
 
@@ -25,16 +27,21 @@ public class ShakeController : MonoBehaviour
     {
         if (freezeMilliseconds > 0)
         {
-            _freezeTime = (float)freezeMilliseconds / 1000f;
-
             if (Time.timeScale > 0f)
                 _originalTimeScale = Time.timeScale;
+
+            _freezeTime = (float)freezeMilliseconds / 1000f;
 
             await FreezeTime();
         }
 
         if (magnitude > 0f && duration > 0f)
         {
+            if (_shakeTime == 0f)
+                _originalPosition = this.transform.localPosition;
+
+            _shakeTime = duration;
+
             await RandomShake(magnitude, duration, normalize, direction);
         }
     }
@@ -56,14 +63,12 @@ public class ShakeController : MonoBehaviour
 
     private async Task RandomShake(float magnitude, float duration, bool normalize, Vector2 direction)
     {
-        float shakeTime = 0f;
         Vector2 v2;
-        _originalPosition = this.transform.localPosition;
 
-        while (shakeTime < duration)
+        while (_shakeTime > 0f)
         {
             await Task.Yield();
-            shakeTime += Time.unscaledDeltaTime;
+            _shakeTime -= Time.unscaledDeltaTime;
 
             float rnd = Random.Range(0f, 1f);
             if(direction == default)
@@ -84,6 +89,8 @@ public class ShakeController : MonoBehaviour
 
             this.transform.localPosition = _originalPosition + new Vector3(v2.x, v2.y, 0);
         }
+
+        _shakeTime = 0f;
         this.transform.localPosition = _originalPosition;
     }
 
