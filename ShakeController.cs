@@ -86,4 +86,11 @@ public class ShakeController : MonoBehaviour
         }
         this.transform.localPosition = _originalPosition;
     }
+
+    // This function should be used if we want to change TimeScale in the middle of a Freeze
+    public void SetTimeScale(float timeScale)
+    {
+        Time.timeScale = timeScale;
+        _originalTimeScale = timeScale;
+    }
 }
