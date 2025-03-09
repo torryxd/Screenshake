@@ -79,7 +79,7 @@ public class ShakeController : MonoBehaviour
             }
             else
             {
-                v2 = direction * ((rnd * 2f) - 1f);
+                v2 = direction.normalized * ((rnd * 2f) - 1f);
             }
 
             if (normalize)
