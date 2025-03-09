@@ -14,7 +14,6 @@ public class ShakeController : MonoBehaviour
     private float _freezeTime;
     private float _originalTimeScale;
     private Vector3 _originalPosition;
-    private CancellationTokenSource _shakeCancel;
 
 
     private void Awake()
@@ -36,9 +35,7 @@ public class ShakeController : MonoBehaviour
 
         if (magnitude > 0f && duration > 0f)
         {
-            _shakeCancel?.Cancel();
-            _shakeCancel = new CancellationTokenSource();
-            await RandomShake(_shakeCancel.Token, magnitude, duration, normalize, direction);
+            await RandomShake(magnitude, duration, normalize, direction);
         }
     }
 
@@ -57,7 +54,7 @@ public class ShakeController : MonoBehaviour
         Time.timeScale = _originalTimeScale;
     }
 
-    private async Task RandomShake(CancellationToken token, float magnitude, float duration, bool normalize, Vector2 direction)
+    private async Task RandomShake(float magnitude, float duration, bool normalize, Vector2 direction)
     {
         float shakeTime = 0f;
         Vector2 v2;
@@ -65,9 +62,6 @@ public class ShakeController : MonoBehaviour
 
         while (shakeTime < duration)
         {
-            if (token.IsCancellationRequested)
-                break;
-
             await Task.Yield();
             shakeTime += Time.unscaledDeltaTime;
 
