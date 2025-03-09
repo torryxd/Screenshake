@@ -24,7 +24,7 @@ public class ShakeController : MonoBehaviour
 
     public async void Shake(float magnitude = DEFAULT_MAGNITUDE, float duration = DEFAULT_DURATION, int freezeMilliseconds = DEFAULT_FREEZE, bool normalize = DEFAULT_NORMALIZE, Vector2 direction = default)
     {
-        if (freezeMilliseconds > 0f)
+        if (freezeMilliseconds > 0)
         {
             _freezeTime = (float)freezeMilliseconds / 1000f;
 
