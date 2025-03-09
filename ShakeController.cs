@@ -1,57 +1,95 @@
-using System.Collections;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
 public class ShakeController : MonoBehaviour
 {
-	public static ShakeController Instance;
-	private Vector3 originalPosition;
+    const float DEFAULT_MAGNITUDE = 0.1f;
+    const float DEFAULT_DURATION = 0.1f;
+    const int DEFAULT_FREEZE = 0;
+    const bool DEFAULT_NORMALIZE = true;
 
-	private void Awake() 
-	{
-		Instance = this;
-	}
+    public static ShakeController Instance;
 
-    public async void Shake(float magnitude = 0.1f, float duration = 0.1f, int freezeMS = 0)
+    private float _freezeTime;
+    private float _originalTimeScale;
+    private Vector3 _originalPosition;
+    private CancellationTokenSource _shakeCancel;
+
+
+    private void Awake()
     {
-		if(freezeMS > 0 && Time.timeScale > 0){
-			await justFreeze(freezeMS);
-		}
-		
-		if(magnitude > 0 && duration > 0){
-			await justShake(magnitude, duration);
-		}
+        Instance = this;
     }
 
-	private async Task justFreeze(int MS) {
-		float MStoS = (float)MS / 1000f;
-        float d = 0f;
-		float originalTimeScale = Time.timeScale;
+    public async void Shake(float magnitude = DEFAULT_MAGNITUDE, float duration = DEFAULT_DURATION, int freezeMilliseconds = DEFAULT_FREEZE, bool normalize = DEFAULT_NORMALIZE, Vector2 direction = default)
+    {
+        if (freezeMilliseconds > 0f)
+        {
+            _freezeTime = (float)freezeMilliseconds / 1000f;
 
-        while (d < MStoS) {
-            await Task.Yield();
-            d += Time.unscaledDeltaTime;
+            if (Time.timeScale > 0f)
+                _originalTimeScale = Time.timeScale;
 
-			Time.timeScale = 0;
+            await FreezeTime();
         }
-		Time.timeScale = originalTimeScale;
-    }
 
-	private async Task justShake(float magnitude, float duration) {
-        float d = 0f;
-		originalPosition = this.transform.position;
-
-        while (d < duration) {
-            await Task.Yield();
-            d += Time.unscaledDeltaTime;
-
-			float rnd = Random.Range(0f, 1f);
-			float x = Random.Range(-rnd, rnd);
-			float y = Random.Range(-(1-rnd), (1-rnd));
-            Vector2 v2 = new Vector2(x, y).normalized * magnitude;
-			this.transform.position = originalPosition + new Vector3(v2.x, v2.y, 0);
+        if (magnitude > 0f && duration > 0f)
+        {
+            _shakeCancel?.Cancel();
+            _shakeCancel = new CancellationTokenSource();
+            await RandomShake(_shakeCancel.Token, magnitude, duration, normalize, direction);
         }
-        this.transform.position = originalPosition;
     }
 
+    private async Task FreezeTime()
+    {
+        float elapsed = 0f;
+
+        while (elapsed < _freezeTime)
+        {
+            await Task.Yield();
+            elapsed += Time.unscaledDeltaTime;
+
+            Time.timeScale = 0f;
+        }
+
+        Time.timeScale = _originalTimeScale;
+    }
+
+    private async Task RandomShake(CancellationToken token, float magnitude, float duration, bool normalize, Vector2 direction)
+    {
+        float shakeTime = 0f;
+        Vector2 v2;
+        _originalPosition = this.transform.localPosition;
+
+        while (shakeTime < duration)
+        {
+            if (token.IsCancellationRequested)
+                break;
+
+            await Task.Yield();
+            shakeTime += Time.unscaledDeltaTime;
+
+            float rnd = Random.Range(0f, 1f);
+            if(direction == default)
+            {
+                float x = Random.Range(-rnd, rnd);
+                float y = Random.Range(-(1f - rnd), (1f - rnd));
+                v2 = new Vector2(x, y);
+            }
+            else
+            {
+                v2 = direction * ((rnd * 2f) - 1f);
+            }
+
+            if (normalize)
+                v2 = v2.normalized;
+
+            v2 *= magnitude;
+
+            this.transform.localPosition = _originalPosition + new Vector3(v2.x, v2.y, 0);
+        }
+        this.transform.localPosition = _originalPosition;
+    }
 }
